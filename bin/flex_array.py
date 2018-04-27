@@ -43,25 +43,30 @@ def sparse_aln_df(infile):
     print('Reading alignment file: ' + infile)
     aln_df = pd.read_pickle(infile)
     #aln_df = aln_df.to_dense()
-    binary_b = pd.DataFrame(np.where(aln_df > 0, 1, 0), index=[str(i) for i in aln_df.index], columns=aln_df.columns)
-    binary_b.fillna(0, inplace=True)
+    binary_b = pd.DataFrame(np.where(aln_df > 0, 1, 0), index=[str(i) for i in aln_df.index], columns=aln_df.columns, dtype=np.float)
+    binary_b.fillna(0.0, inplace=True)
     return binary_b
 
 class array:
 	def __init__(self, array):
 		self.array = array
 	
-	def filter_aln(self, min_alignments=10):
+	def filter_aln(self, ref_seq='', min_alignments=10):
 		time1 = timeit.default_timer()
 		virus_sums = self.array.apply(np.sum, axis=0)
-		viruses = list(self.array.columns)
+		#viruses = list(self.array.columns)
+		'''
 		virus_intersections = pd.DataFrame(index=viruses, columns=viruses)
 		for i in viruses:
 			a = self.array[i]
 			for j in viruses:
 				b = self.array[j]
 				virus_intersections.loc[i,j] = np.dot(a,b)
-
+		
+		virus_intersections.to_csv(ref_seq+"virus_intersections.csv", header=True, index=True)
+		'''
+		virus_intersections = pd.read_csv(ref_seq+"virus_intersections.csv", header=0, index_col=0)
+		
 		shared_prob = virus_intersections.divide(virus_sums, axis='columns')		
 		np.fill_diagonal(shared_prob.values, 0)
 		
@@ -76,7 +81,7 @@ class array:
 					parent.append(j)
 		shared_df['child'] = child
 		shared_df['parent'] = parent
-		G = nx.from_pandas_dataframe(shared_df, source='child', target='parent', create_using=nx.DiGraph())
+		G = nx.from_pandas_edgelist(shared_df, source='child', target='parent', create_using=nx.DiGraph())
 		virus_lengths = {i:len(i) for i in G.nodes()}
 		nx.set_node_attributes(G, name='Length', values=virus_lengths)
 		#Remove complete subset viruses
@@ -197,10 +202,10 @@ class array:
 					#If only one passes the threshold, reassign peptides accordingly
 					if is_sig(second_round_prob.loc[i,specie[0]], n_rank-shared_num, high_num-shared_num) and not is_sig(second_round_prob.loc[specie[0],i], n_rank-shared_num, i_num-shared_num):#highrank_pvalue < p_threshold and i_pvalue >= p_threshold and high_num-shared_num > hits_threshold and i_num-shared_num > hits_threshold:
 						#Subtract shared peptides from the insignificant virus
-						self.array.loc[:,i] = i_rank-shared_peps
+						self.array.loc[:,i] = i_rank^shared_peps
 					elif not is_sig(second_round_prob.loc[i,specie[0]], n_rank-shared_num, high_num-shared_num) and is_sig(second_round_prob.loc[specie[0],i], n_rank-shared_num, i_num-shared_num):#highrank_pvalue >= p_threshold and i_pvalue < p_threshold and high_num-shared_num > hits_threshold and i_num-shared_num > hits_threshold:
 						#Same as above
-						self.array.loc[:,specie[0]] = highrank-shared_peps
+						self.array.loc[:,specie[0]] = highrank^shared_peps
 					self.array = self.array.astype(bool) #recast in case of subtraction back to int
 			
 			#Add p-value to series after any potential reassignments

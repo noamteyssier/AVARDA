@@ -35,7 +35,7 @@ class phip:
 		zdf = flex_array.standard_df(self.par['zscore_file'])
 		
 		binary_b = flex_array.sparse_aln_df(self.par['file_aln'])
-		binary_b = flex_array.array(binary_b).filter_aln()
+		binary_b = flex_array.array(binary_b).filter_aln(ref_seq=self.par['dir_ref_seq'])
 		binary_b=binary_b.reindex(zdf.index).fillna(0)
 	
 		sum_df = pd.DataFrame(0, index=list(binary_b), columns=list(zdf))
