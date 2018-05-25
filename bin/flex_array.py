@@ -13,8 +13,9 @@ from scipy.stats import binom_test
 
 def standard_df(infile):
 	sep = ',' if infile.endswith('csv') else '\t'
-	stand_df = pd.read_csv(infile, header=0, index_col=0, sep=sep, low_memory=False)
-	stand_df.index=[str(i) for i in stand_df.index]
+	stand_df = pd.read_csv(infile, header=0, sep=sep, dtype=str, low_memory=False)
+	stand_df.set_index(stand_df.columns[0], inplace=True)
+	stand_df = stand_df.astype(float)
 	stand_df.columns=[str(i) for i in stand_df.columns]
 	stand_df.fillna(0, inplace=True)
 	return stand_df
