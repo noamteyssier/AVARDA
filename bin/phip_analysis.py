@@ -8,6 +8,7 @@ import flex_array
 import params
 import pandas as pd
 import numpy as np
+from joblib import Parallel, delayed
 from statsmodels.sandbox.stats.multicomp import multipletests
 
 class phip:
@@ -51,6 +52,9 @@ class phip:
 		
 		nonoverlap_dict = {}
 		
+		parallel_dict1 = {}
+		parallel_dict2 = {}
+		
 		for sample_name, column in zdf.iteritems():
 			hits = column[column>=self.par['Z_threshold']].copy()
 			if self.par['use_filter']:
@@ -66,6 +70,9 @@ class phip:
 			
 			if input_num > 0:
 				zb_df=binary_b.loc[nonoverlap_hits.index]
+				parallel_dict1[sample_name] = input_num
+				parallel_dict2[sample_name] = zb_df
+				'''
 				collapse_zb, glob_array, sim_tag, p_series, orig_pseries = flex_array.array(zb_df).binom_reassign(
 						input_num, self.par['dir_ref_seq'], self.par['p_threshold'], self.par['x_threshold'], self.par['organism'])
 				sum_df[sample_name]=collapse_zb.apply(sum, axis=0) + sim_tag
@@ -73,7 +80,25 @@ class phip:
 				pep_df[sample_name]=collapse_zb.apply(lambda x: flex_array.array(x).names_string(0.001),axis=0)
 				p_df[sample_name]=p_series
 				orig_p[sample_name]=orig_pseries
+				'''
+		
+		list1 = list(parallel_dict1.keys()) #sample_names
+		list2 = list(parallel_dict1.values()) #input_num
+		list3 = [parallel_dict2[i] for i in list1] #zb_df
+		zipped = zip(list3, list2, list1)
+		#
+		results = Parallel(n_jobs=-1)(delayed(flex_array.binom_reassign)(zb_df, input_num, sample_name, self.par['dir_ref_seq'], 
+					 self.par['p_threshold'], self.par['x_threshold'], self.par['organism']) for zb_df, input_num, sample_name in zipped)
 			
+		r1, r2, r3, r4, r5, r6 = zip(*results)
+		for i in range(len(r6)):
+			sample_name=r6[i]; collapse_zb=r1[i]; glob_array=r2[i]; sim_tag=r3[i]; p_series=r4[i]; orig_pseries=r5[i];
+			sum_df[sample_name]=collapse_zb.apply(sum, axis=0) + sim_tag
+			glob_unique[sample_name] = glob_array.apply(sum, axis=0) + sim_tag
+			pep_df[sample_name]=collapse_zb.apply(lambda x: flex_array.array(x).names_string(0.001),axis=0)
+			p_df[sample_name]=p_series
+			orig_p[sample_name]=orig_pseries
+		#
 		file_head = self.par['sub_dir'] + self.par['zscore_file'].split('/')[-1].split('.')[0] #Removes file path and extension
 		if self.par['organism']:
 			file_head += '_organism_'

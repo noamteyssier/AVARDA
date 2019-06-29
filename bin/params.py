@@ -62,8 +62,9 @@ class param_dict:
 			self.par['organism'] = True
 		else:
 			self.par['organism'] = False
-		if not self.par['dir_home'][-1] == '/':
-			self.par['dir_home'] += '/'
+		self.par['dir_home'] = os.getcwd().replace('\\' , '/').replace('bin','')
+		#if not self.par['dir_home'][-1] == '/':
+		#	self.par['dir_home'] += '/'
 		self.par['dir_input'] = self.par['dir_home'] + 'input/'
 		self.par['dir_result'] = self.par['dir_home'] + 'results/'
 		try:
