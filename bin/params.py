@@ -79,10 +79,10 @@ class param_dict:
 		d = d.strftime("%d-%B-%Y_%H-%M")
 		file_head = self.par['zscore_file'].split('.')[0]
 		self.par['sub_dir'] = self.par['dir_result'] + file_head + ' ' + d + '/'
-		os.makedirs(self.par['sub_dir'], exist_ok=True)
+		os.makedirs(self.par['sub_dir'])
 		
 		self.par['graph_dir'] = self.par['sub_dir'] + 'sample_networks/'
-		os.makedirs(self.par['graph_dir'], exist_ok=True)
+		os.makedirs(self.par['graph_dir'])
 		
 		self.par['file_annotation'] = self.par['dir_ref_seq'] + self.par['file_annotation']
 		self.par['file_aln'] = self.par['dir_ref_seq'] + self.par['file_aln']

@@ -20,7 +20,7 @@ def standard_df(infile):
 	stand_df.fillna(0, inplace=True)
 	return stand_df
 
-def binary_aln_df(infile):
+'''def binary_aln_df(infile):
 	print('Reading alignment file: ' + infile)
 	file_sep = '\t' if infile.endswith('txt') else ','
 	aln_df = params.file_IO(infile, file_sep).flat_file_to_df([0,1,11])
@@ -55,11 +55,11 @@ def binom_reassign(zb_df, input_num, sample_name, ref_seq, p_threshold=0.01, hit
 		org=ref_seq+'org_'
 	else:
 		org=ref_seq
-	
+
 	first_round_prob = pd.read_csv(org+"total_probabilities.csv", index_col=0, header=None, squeeze=True)
 	second_round_prob = pd.read_csv(org+"unique_probabilities.csv", header=0, index_col=0)
 	third_round_prob = pd.read_csv(org+"shared_probabilities.csv", header=0, index_col=0)
-	
+
 	#Function for defining significance
 	def is_sig(p, n, x):
 		p_value = binom_test(p=p, n=n, x=x, alternative='greater')
@@ -67,10 +67,10 @@ def binom_reassign(zb_df, input_num, sample_name, ref_seq, p_threshold=0.01, hit
 			return True
 		else:
 			return False
-	
+
 	#Series of p-values for each virus
 	p_series = pd.Series(index=list(zb_df.columns))
-	
+
 	#Number of hits to each virus
 	ranked_hits = zb_df.apply(np.count_nonzero, axis=0)
 	orig_viruses = zb_df.columns
@@ -79,17 +79,17 @@ def binom_reassign(zb_df, input_num, sample_name, ref_seq, p_threshold=0.01, hit
 	virus_pvalues_1 = pd.Series(index=list(zb_df.columns))
 	for i in virus_pvalues_1.index:
 		virus_pvalues_1[i] = binom_test(p=first_round_prob[i], n=input_num, x=ranked_hits[i], alternative='greater')
-	
+
 	#Pre-greedy p-values for output
 	orig_pseries = virus_pvalues_1.copy()
-	
+
 	#Sort viruses by initial p-value
 	virus_pvalues_1.sort_values(inplace=True, ascending=True)
 	#Sort virus hits series by p-value
-	ranked_hits = ranked_hits[virus_pvalues_1.index]   
+	ranked_hits = ranked_hits[virus_pvalues_1.index]
 	specie = list(ranked_hits.index)
 	n_rank = input_num
-	
+
 	while len(ranked_hits)>0 and ranked_hits.iloc[0]>0:
 		#Comparing top hit to everything else (reassignments only)
 		zb_df = zb_df.astype(bool) #cast to bool for faster computation
@@ -112,17 +112,17 @@ def binom_reassign(zb_df, input_num, sample_name, ref_seq, p_threshold=0.01, hit
 					#Same as above
 					zb_df.loc[:,specie[0]] = highrank^shared_peps
 				zb_df = zb_df.astype(bool) #recast in case of subtraction back to int
-		
+
 		#Add p-value to series after any potential reassignments
 		top_hit = specie[0]
 		p_series[top_hit] = binom_test(p=first_round_prob[top_hit], n=n_rank, x=np.count_nonzero(zb_df[top_hit]), alternative='greater')
-		
+
 		#Figure out how many peptides were globally unique to highrank
 		high_peptides = np.where(zb_df[specie[0]] == 1)[0]
 		#high_hits = zb_df[zb_df[specie[0]]==1].apply(np.count_nonzero, axis=1)
 		#high_unique = len(high_hits[high_hits==1])
 		high_unique = len(np.where(zb_df.iloc[high_peptides,:].apply(np.count_nonzero, axis=1) == 1)[0])
-		
+
 		#Now remove the highest hit since it will not be involved in subsequent comparisons
 		specie.remove(specie[0])
 		#Re-rank virus hits by total binomial
@@ -131,14 +131,14 @@ def binom_reassign(zb_df, input_num, sample_name, ref_seq, p_threshold=0.01, hit
 		virus_pvalues_1 = pd.Series(index=specie)
 		#Adjust the n used for binomial tests
 		n_rank -= high_unique
-		
+
 		#Sort viruses by p-value
 		for i in specie:
 			virus_pvalues_1[i] = binom_test(p=first_round_prob[i], n=n_rank, x=ranked_hits[i], alternative='greater')
 		virus_pvalues_1.sort_values(inplace=True, ascending=True)
 		specie = list(virus_pvalues_1.index)
 		ranked_hits = ranked_hits[specie]
-	
+
 	#Calculate sim tags after performing all peptide reassignments
 	ranked_hits = zb_df.apply(np.count_nonzero, axis=0)
 	virus_pvalues_1 = pd.Series(index=list(zb_df.columns))
@@ -146,14 +146,14 @@ def binom_reassign(zb_df, input_num, sample_name, ref_seq, p_threshold=0.01, hit
 		virus_pvalues_1[i] = binom_test(p=first_round_prob[i], n=input_num, x=ranked_hits[i], alternative='greater')
 	virus_pvalues_1.sort_values(inplace=True, ascending=True)
 	ranked_hits = ranked_hits[virus_pvalues_1.index]
-	
+
 	#Sim tags for each virus, list of species to be examined
 	specie=list(ranked_hits.index)
 	sim_tag = pd.Series(float(0), index=specie)
 	tag = 0
-	
+
 	n_rank = input_num
-	
+
 	zb_df = zb_df.astype(bool)
 	while len(ranked_hits)>0 and ranked_hits.iloc[0]>0:
 		for i in specie[1:]:
@@ -178,12 +178,12 @@ def binom_reassign(zb_df, input_num, sample_name, ref_seq, p_threshold=0.01, hit
 					elif sim_tag[i] != 0 and sim_tag[specie[0]] == 0:
 						sim_tag.loc[specie[0]] = sim_tag[i]
 				#zb_df = zb_df.astype(bool)
-		
+
 		#Figure out how many peptides were globally unique to highrank
-		
+
 		high_peptides = np.where(zb_df[specie[0]] == 1)[0]
 		high_unique = len(np.where(zb_df.iloc[high_peptides,:].apply(np.count_nonzero, axis=1) == 1)[0])
-		
+
 		#high_hits = zb_df[zb_df[specie[0]]==1].apply(np.count_nonzero, axis=1)
 		#high_unique = np.count_nonzero(high_hits)#len(high_hits[high_hits==1])
 		#Now remove the highest hit since it will not be involved in subsequent comparisons
@@ -193,24 +193,24 @@ def binom_reassign(zb_df, input_num, sample_name, ref_seq, p_threshold=0.01, hit
 		#ranked_hits = ranked_hits[specie]
 		#virus_pvalues_1 = pd.Series(index=specie)
 		n_rank -= high_unique
-		'''
+
 		for i in specie:
 			virus_pvalues_1[i] = binom_test(p=first_round_prob[i], n=n_rank, x=ranked_hits[i], alternative='greater')
 		#Sort viruses by p-value
-		'''
+
 		virus_pvalues_1 = virus_pvalues_1[specie]
 		virus_pvalues_1.sort_values(inplace=True, ascending=True)
 		#Sort virus hits series by p-value
 		specie = list(virus_pvalues_1.index)
 		ranked_hits = ranked_hits[specie]
-	
+
 	zb_df = zb_df.astype(int)
 	#Generate unique values matrix
 	glob_unique = zb_df.copy()
 	for i in glob_unique.index:
 		if sum(glob_unique.loc[i]) > 1:
 			glob_unique.loc[i] -= glob_unique.loc[i]
-	
+
 	#Generate adjusted p-values for the p-value output Series (using the R package)
 	#stats = importr('stats')
 	#p_adjusted = stats.p_adjust(FloatVector(p_series.values), method='BH')​
@@ -219,14 +219,14 @@ def binom_reassign(zb_df, input_num, sample_name, ref_seq, p_threshold=0.01, hit
 	sim_tag = sim_tag.reindex(orig_viruses, fill_value=0)
 	p_series = p_series.reindex(orig_viruses, fill_value=0)
 	orig_pseries = orig_pseries.reindex(orig_viruses, fill_value=0)
-	
+
 	print("Done with reassignments! Time: ", timeit.default_timer()-time1)
-	return zb_df, glob_unique, sim_tag, p_series, orig_pseries, sample_name#, p_adjust_series
+	return zb_df, glob_unique, sim_tag, p_series, orig_pseries, sample_name#, p_adjust_series'''
 
 class array:
 	def __init__(self, array):
 		self.array = array
-	
+
 	def filter_aln(self, ref_seq='', min_alignments=10):
 		time1 = timeit.default_timer()
 		virus_sums = self.array.apply(np.sum, axis=0)
@@ -238,14 +238,14 @@ class array:
 			for j in viruses:
 				b = self.array[j]
 				virus_intersections.loc[i,j] = np.dot(a,b)
-		
+
 		virus_intersections.to_csv(ref_seq+"virus_intersections.csv", header=True, index=True)
 		'''
 		virus_intersections = pd.read_csv(ref_seq+"virus_intersections.csv", header=0, index_col=0)
-		
-		shared_prob = virus_intersections.divide(virus_sums, axis='columns')		
+
+		shared_prob = virus_intersections.divide(virus_sums, axis='columns')
 		np.fill_diagonal(shared_prob.values, 0)
-		
+
 		#Create directed graph representation of virus dependencies
 		shared_df = pd.DataFrame(columns=['child', 'parent'])
 		child = []; parent = [];
@@ -264,7 +264,7 @@ class array:
 		in_degree = pd.Series(dict(G.in_degree()))
 		remove_viruses = list(in_degree.index[np.where(in_degree == 0)[0]])
 		G.remove_nodes_from(remove_viruses)
-		
+
 		#Find cycles in G, remove all but shortest string virus in each cycle
 		len_cycles = 1
 		while len_cycles != 0:
@@ -288,7 +288,7 @@ class array:
 						if cycle_lengths[j] != min_length:
 							remove_viruses.append(j)
 							G.remove_node(j)
-		
+
 		#Remove viruses with most outgoing edges (denoting subset) iteratively
 		if len(G.edges()) != 0:
 			out_degree = pd.Series(dict(G.out_degree()))
@@ -306,25 +306,25 @@ class array:
 		f.close()
 		'''
 		self.array.drop(remove_viruses, axis=1, inplace=True)
-		
+
 		#Drop the appropriate viruses from the alignment matrix
 		virus_sums = self.array.apply(np.sum, axis=0, raw=True, reduce=True)
 		virus_sums_index = list(virus_sums.index)
 		for i in range(len(virus_sums)):
 			if virus_sums.iloc[i] <= min_alignments:
 				self.array.drop(virus_sums_index[i], axis=1, inplace=True)
-		
+
 		time2 = timeit.default_timer()
 		print("Time to filter the alignment matrix: " + str(time2-time1))
-		
+
 		return self.array
-		
+
 	def names_string(self, cutoff=0.001):
 		hits = pd.Series(self.array)
 		hits = hits[hits>=cutoff]
 		names_str = ';'.join(list(hits.index))
 		return names_str
-	
+
 	def gen_ind_hits(self, overlap_dict, graph_dir, sample_number):
 		hits_series = pd.Series(self.array).astype(float)
 		#Start time, for timing purposes
@@ -348,15 +348,15 @@ class array:
 		zscore = {i:float(zscore[i]) for i in zscore}
 		nx.set_node_attributes(G, name='Z-Score', values=zscore)
 		zscore = nx.get_node_attributes(G, name='Z-Score')
-		
+
 		edge = nx.get_edge_attributes(G, name='weight')
 		edge = {i:float(edge[i]) for i in edge}
 		nx.set_edge_attributes(G, name='weight', values=edge)
-		
+
 		#Write graphml file to appropriate directory
 		#nx.write_graphml(G, graph_dir+sample_name.replace('.','-')+'.graphml')
 		nx.write_graphml(G, graph_dir+'sample_' + str(sample_number) + '.graphml')
-		
+
 		#Reducing graph to max_degree 2
 		if len(G.edges()) != 0:
 			degree = dict(G.degree(nbunch=G.nodes()))
@@ -378,7 +378,7 @@ class array:
 						if zscore[i] == min_z:
 							G.remove_node(i)
 							break #so that multiple nodes are not removed
-				
+
 		#Eliminates one vertex from each cycle (lowest z-score) to convert them into paths
 		len_cycles = 1
 		#While loop to make sure that there are no cycles left
@@ -405,7 +405,7 @@ class array:
 						if node_zscores[j] == min_score:
 							G.remove_node(j)
 							break #otherwise it will eliminate two nodes in one cycle which both have the same z-score
-		
+
 		#Code for deleting vertices from paths based on even or odd length
 		node_zscores = nx.get_node_attributes(G, name='Z-Score')
 		degree = dict(G.degree(nbunch=G.nodes()))
@@ -413,20 +413,22 @@ class array:
 			degrees = [i for i in degree.values()]
 			max_degree = max(degrees)
 			while(max_degree > 0):
-				components = list(nx.connected_component_subgraphs(G))
+				components = list(nx.connected_components(G))
 				for i in components:
 					#even paths
-					if len(i.nodes())%2 == 0:
+					# print(i)
+					# sys.exit()
+					if len(i)%2 == 0:
 						path_scores = [node_zscores[k] for k in i]
 						min_score = min(path_scores)
-						for j in i.nodes():
+						for j in i:
 							if node_zscores[j] == min_score:
 								G.remove_node(j)
 								break #same as above
 					#odd paths
-					elif len(i.nodes())%2 == 1 and len(i.nodes()) != 1:
+					elif len(i)%2 == 1 and len(i) != 1:
 						endpoints=[]
-						for j in i.nodes():
+						for j in i:
 							if degree[j] == 1:
 								endpoints.append(j)
 						if len(endpoints)==2:
@@ -437,22 +439,22 @@ class array:
 				degree = dict(G.degree(nbunch=G.nodes()))
 				degrees = [i for i in degree.values()]
 				max_degree = max(degrees)
-		
+
 		num_nodes = len(G.nodes())
 		proportion = np.divide(float(num_nodes), float(num_hits))
 		print("Proportion of hits kept: " + str(proportion))
-		
+
 		#Creating pd.Series object from the nodes of the graph
 		ind_hits_dict = {i: node_zscores[i] for i in G.nodes()}
 		ind_hits_series = pd.Series(ind_hits_dict)
-		#print("Number of peptides kept: " + str(len(ind_hits_series)))  
-		
+		#print("Number of peptides kept: " + str(len(ind_hits_series)))
+
 		end_time = timeit.default_timer()
 		sample_time = end_time - start_time
 		print("Time it took to remove overlaps: " + str(sample_time))
-		
+
 		#print("Number of edges in G: " + str(len(G.edges()))) (should be 0, always)
-		
+
 		return ind_hits_series
-	
+
 #End
