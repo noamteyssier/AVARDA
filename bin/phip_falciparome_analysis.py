@@ -19,7 +19,7 @@ class phip:
 
 	def dependent_peptides(self):
 		self.dependent_pep = {}
-		file_dependent = self.par['dir_ref_seq']+'z10_hit_8_AVARDA_falciparome_peptides_pairs_sharing_7mer.csv'
+		file_dependent = self.par['linkage']
 		f = open(file_dependent, 'r')
 		for line in f:
 			line = line.strip().split(',')
@@ -136,30 +136,30 @@ class phip:
 			f.write('\n')
 		f.close()
 
-		#Write summary file
-		f = open(self.par['sub_dir']+'results_summary.txt', 'w')
-		f.write("Sample name\tVirus\tBH p-value\tRaw p-value\tOrig p-value\tAssigned counts\t")
-		f.write("Assigned peptides\tTotal sample hits\tTotal filtered sample hits\n")
-		for i in samples:
-			BH = padjust_df[i]
-			BH = BH[BH < self.par['bh_threshold']]
-			p_value = p_df[i]
-			p_value = p_value[BH.index]
-			orig_pvalue = orig_p[i]
-			orig_pvalue = orig_pvalue[BH.index]
-			counts = sum_df[i]
-			counts = counts[BH.index]
-			peptides = pep_df[i]
-			peptides = peptides[BH.index]
-
-			for j in BH.index:
-					if counts[j] > self.par['x_threshold']:
-						f.write(i+'\t')
-						f.write(j+'\t'+str(BH[j])+'\t')
-						f.write(str(p_value[j])+'\t'+str(orig_pvalue[j])+'\t')
-						f.write(str(counts[j])+'\t'+str(peptides[j])+'\t')
-						f.write(str(hits_series[i])+'\t'+str(nonoverlap_hits_series[i])+'\n')
-		f.close()
-		print("End of run.")
-		return None
+		# #Write summary file
+		# f = open(self.par['sub_dir']+'results_summary.txt', 'w')
+		# f.write("Sample name\tVirus\tBH p-value\tRaw p-value\tOrig p-value\tAssigned counts\t")
+		# f.write("Assigned peptides\tTotal sample hits\tTotal filtered sample hits\n")
+		# for i in samples:
+		# 	BH = padjust_df[i]
+		# 	BH = BH[BH < self.par['bh_threshold']]
+		# 	p_value = p_df[i]
+		# 	p_value = p_value[BH.index]
+		# 	orig_pvalue = orig_p[i]
+		# 	orig_pvalue = orig_pvalue[BH.index]
+		# 	counts = sum_df[i]
+		# 	counts = counts[BH.index]
+		# 	peptides = pep_df[i]
+		# 	peptides = peptides[BH.index]
+		#
+		# 	for j in BH.index:
+		# 			if counts[j] > self.par['x_threshold']:
+		# 				f.write(i+'\t')
+		# 				f.write(j+'\t'+str(BH[j])+'\t')
+		# 				f.write(str(p_value[j])+'\t'+str(orig_pvalue[j])+'\t')
+		# 				f.write(str(counts[j])+'\t'+str(peptides[j])+'\t')
+		# 				f.write(str(hits_series[i])+'\t'+str(nonoverlap_hits_series[i])+'\n')
+		# f.close()
+		# print("End of run.")
+		# return None
 		#End

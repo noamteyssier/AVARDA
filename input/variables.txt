@@ -1,7 +1,9 @@
-dir_home=/home/noam/data/AVARDA-Larman
+dir_home=../src/AVARDA
 file_annotation=VirScan_v1_annot.txt
 file_aln=aln_sparse.pkl
-zscore_file=HITS_Round2_Pfonly_250kfil_techclean_10zscorefil_8patientsfil.csv
+zscore_file=/home/noam/projects/PhIP-Seq_TororoKanungu/results/AVARDA_z10_c8/z10_c8_bool.csv
+linkage=/home/noam/projects/PhIP-Seq_TororoKanungu/results/AVARDA_z10_c8/z10_c8_linkage.tab
+dir_result=/home/noam/projects/PhIP-Seq_TororoKanungu/results/AVARDA_z10_c8
 use_filter=yes
 Z_threshold=1
 p_threshold=0.01

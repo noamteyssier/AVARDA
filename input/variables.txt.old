@@ -1,0 +1,9 @@
+dir_home=/home/noam/data/AVARDA-Larman
+file_annotation=VirScan_v1_annot.txt
+file_aln=aln_sparse.pkl
+zscore_file=HITS_Round2_Pfonly_250kfil_techclean_10zscorefil_8patientsfil.csv
+use_filter=yes
+Z_threshold=1
+p_threshold=0.01
+x_threshold=2
+bh_threshold=0.05
