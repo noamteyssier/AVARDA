@@ -78,7 +78,7 @@ class param_dict:
 		d = date.today()
 		d = d.strftime("%d-%B-%Y_%H-%M")
 		file_head = os.path.basename(self.par['zscore_file'])
-		self.par['sub_dir'] = self.par['dir_result'] + "/" + d + '/'
+		self.par['sub_dir'] = self.par['dir_result'] + "/results/" 
 		os.makedirs(self.par['sub_dir'])
 
 		self.par['graph_dir'] = self.par['sub_dir'] + 'sample_networks/'
